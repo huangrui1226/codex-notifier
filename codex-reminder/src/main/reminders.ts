@@ -135,7 +135,7 @@ export function registerReminders(sendToPhone: (kind: ReminderKind) => boolean):
     }
     if (settings.sound) {
       shell.beep()
-      if (kind === 'attention') {
+      if (kind === 'completed') {
         await delay(300)
         shell.beep()
       }

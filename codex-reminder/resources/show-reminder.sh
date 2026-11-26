@@ -62,8 +62,8 @@ APPLESCRIPT
 fi
 if [ "$sound" = true ]; then
   case "$kind" in
-    completed) tone=/System/Library/Sounds/Glass.aiff ;;
-    attention) tone="$(dirname "$0")/attention.wav" ;;
+    completed) tone="$(dirname "$0")/attention.wav" ;;
+    attention) tone=/System/Library/Sounds/Glass.aiff ;;
   esac
   /usr/bin/afplay "$tone" || result=1
 fi

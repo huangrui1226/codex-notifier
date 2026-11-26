@@ -4,7 +4,7 @@ import type { PhoneState, ReminderKind, ReminderSettings } from '../../shared/re
 
 const options: { key: keyof ReminderSettings; title: string; description: string }[] = [
   { key: 'popup', title: '桌面弹窗', description: '在通知中心显示完成或待处理提醒。' },
-  { key: 'sound', title: '声音提醒', description: '回答完成时响一声，需要你处理时响两声。' }
+  { key: 'sound', title: '声音提醒', description: '回答完成时响两声，需要你处理时响一声。' }
 ]
 if (window.api.supportsEdgeGlow) {
   options.push({
