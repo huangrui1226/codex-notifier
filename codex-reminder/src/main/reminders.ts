@@ -7,6 +7,7 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { setTimeout as delay } from 'node:timers/promises'
 import type { ReminderKind, ReminderSettings } from '../shared/reminders'
+import type { PhoneDelivery } from './iphone'
 import macNotifier from '../../resources/show-reminder.sh?asset&asarUnpack'
 import cliForwarder from '../../resources/notify-macos.sh?asset&asarUnpack'
 import cliClassifier from '../../resources/classify-codex-turn.py?asset&asarUnpack'
@@ -80,7 +81,9 @@ function validate(value: unknown): ReminderSettings {
   }
 }
 
-export function registerReminders(sendToPhone: (kind: ReminderKind) => boolean): void {
+export function registerReminders(
+  sendToPhone: (kind: ReminderKind) => Promise<PhoneDelivery>
+): void {
   const file = join(app.getPath('userData'), 'reminders.json')
   function read(): ReminderSettings {
     try {
@@ -93,9 +96,10 @@ export function registerReminders(sendToPhone: (kind: ReminderKind) => boolean):
   }
 
   async function deliver(event: MacEvent, test = false): Promise<void> {
-    const sent = sendToPhone(event === 'completed' ? 'completed' : 'attention')
+    const delivery = await sendToPhone(event === 'completed' ? 'completed' : 'attention')
+    if (delivery === 'sent') return
     await promisify(execFile)('/bin/sh', [macNotifier, test ? '--test' : '--event', file, event])
-    if (test && !sent) throw new Error('iPhone 未连接')
+    if (test && delivery === 'unavailable') throw new Error('iPhone 未连接')
   }
   if (process.platform === 'darwin') {
     if (!app.commandLine.hasSwitch('user-data-dir')) {
@@ -120,11 +124,11 @@ export function registerReminders(sendToPhone: (kind: ReminderKind) => boolean):
   })
   ipcMain.handle('reminders:test', async (_, kind: unknown = 'completed') => {
     if (kind !== 'completed' && kind !== 'attention') throw new Error('无效的提醒类型')
-    const settings = read()
     if (process.platform === 'darwin') {
       await deliver(kind === 'completed' ? kind : 'input', true)
       return
     }
+    const settings = read()
     if (settings.popup) {
       if (!Notification.isSupported()) throw new Error('当前系统不支持桌面通知')
       new Notification({

@@ -29,7 +29,7 @@ install -m 600 codex-reminder/resources/classify-codex-turn.py ~/.codex/classify
 3. 在 iPhone 打开「Codex 提醒」，点「允许通知」及「查找 Mac」，填入六位码并选择附近的 Mac。按系统提示确认蓝牙配对。下次启动会自动重连之前配对的 Mac。
 4. 保持两台设备在蓝牙范围内，在手机切换到其他 App 后，从 Mac 点击「测试完成」和「测试待处理」。iPhone 通知设置里的横幅和专注模式控制实际展示。配对新手机后只有新手机会收到事件。
 
-离线期间的手机提醒不补发。手动从多任务界面划掉 iPhone App 后，需重新打开它恢复接收。
+iPhone 已连接时，实际提醒和测试提醒都只发送到手机。手机断开或关闭蓝牙提醒后，Mac 自动按已保存的弹窗、声音和屏幕边缘光设置提醒。离线期间的手机提醒不补发。手动从多任务界面划掉 iPhone App 后，需重新打开它恢复接收。
 
 ## Recommended IDE Setup
 

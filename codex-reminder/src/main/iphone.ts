@@ -7,7 +7,9 @@ import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import type { PhoneState, ReminderKind } from '../shared/reminders'
 
-export function registerPhone(): (kind: ReminderKind) => boolean {
+export type PhoneDelivery = 'disabled' | 'unavailable' | 'sent'
+
+export function registerPhone(): (kind: ReminderKind) => Promise<PhoneDelivery> {
   const dir = app.getPath('userData')
   const enabledFile = join(dir, 'iphone-enabled')
   let channel: Socket | undefined
@@ -114,10 +116,12 @@ export function registerPhone(): (kind: ReminderKind) => boolean {
   })
   if (existsSync(enabledFile)) start()
   app.on('before-quit', stop)
-  return (kind) => {
-    if (!existsSync(enabledFile)) return true
-    if (!channel || status !== 'connected') return false
-    channel.write(kind + '\n')
-    return true
+  return async (kind) => {
+    if (!existsSync(enabledFile)) return 'disabled'
+    const socket = channel
+    if (!socket?.writable || status !== 'connected') return 'unavailable'
+    return new Promise<PhoneDelivery>((resolve) => {
+      socket.write(kind + '\n', (error) => resolve(error ? 'unavailable' : 'sent'))
+    })
   }
 }

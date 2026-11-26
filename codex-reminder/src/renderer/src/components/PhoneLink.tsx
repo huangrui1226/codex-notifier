@@ -4,7 +4,7 @@ const labels: Record<PhoneState['status'], string> = {
   disabled: '关闭',
   starting: '蓝牙启动中',
   waiting: '等待 iPhone 连接',
-  connected: 'iPhone 已连接',
+  connected: 'iPhone 已连接，提醒仅发送到手机',
   off: '请开启 Mac 蓝牙',
   denied: '请在系统设置的「隐私与安全性 → 蓝牙」中允许此 App',
   unsupported: '此 Mac 不支持低功耗蓝牙外设模式',
