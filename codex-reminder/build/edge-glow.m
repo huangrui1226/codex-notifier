@@ -58,7 +58,7 @@ int main(int argc, const char *argv[]) {
         [NSApplication.sharedApplication setActivationPolicy:NSApplicationActivationPolicyProhibited];
         NSMutableArray<NSPanel *> *panels = [NSMutableArray array];
         CFTimeInterval halfPulse = 0.95;
-        NSUInteger cycles = 3;
+        NSUInteger cycles = 2;
         for (NSScreen *screen in NSScreen.screens) {
             NSRect frame = screen.frame;
             NSPanel *panel = [[EdgePanel alloc] initWithContentRect:frame

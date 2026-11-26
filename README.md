@@ -5,7 +5,7 @@
 | 桌面应用 | [codex-reminder/](codex-reminder/) |
 | iPhone 接收端 | [iphone/](iphone/) · [Xcode 工程](iphone/NearbyReminders.xcodeproj) |
 
-打开应用可以分别开启弹窗、声音和 macOS 屏幕边缘光。「测试完成」预览绿色，「测试待处理」预览橙色。两种光效都向屏幕中心渐隐并呼吸三次。
+打开应用可以分别开启弹窗、声音和 macOS 屏幕边缘光。「测试完成」预览绿色，「测试待处理」预览橙色。两种光效都向屏幕中心渐隐，每次提醒亮起、熄灭两次，共约 3.8 秒。
 
 Codex CLI 的 `notify` 回调通过 `/bin/sh` 调用 `codex-reminder/resources/notify-macos.sh`。脚本在本地核对会话记录，只有回调对应主对话当前轮的最终回答才显示绿色。如果回答末尾明确要求回复、选择或确认，则按中英文常见表达识别并显示橙色。自然语言识别可能遗漏或误判。缺少会话记录或最终回答标记时会跳过这次回调。
 
