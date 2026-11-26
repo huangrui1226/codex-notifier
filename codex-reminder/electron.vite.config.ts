@@ -101,10 +101,28 @@ function prepareMacDevElectron(): string {
   return executable
 }
 
+function buildPhoneHelperApp(): void {
+  buildMacHelper('iphone-bluetooth.m', 'icon-app-ble', ['Foundation', 'CoreBluetooth'])
+  const binary = join(__dirname, 'resources/icon-app-ble')
+  const plist = join(__dirname, 'build/iphone-helper.plist')
+  const bundle = join(__dirname, 'build/generated/Codex Bluetooth Helper.app')
+  const contents = join(bundle, 'Contents')
+  const signature = join(contents, '_CodeSignature/CodeResources')
+  if (
+    existsSync(signature) &&
+    statSync(signature).mtimeMs >= Math.max(statSync(binary).mtimeMs, statSync(plist).mtimeMs)
+  )
+    return
+  mkdirSync(join(contents, 'MacOS'), { recursive: true })
+  cpSync(binary, join(contents, 'MacOS/icon-app-ble'))
+  cpSync(plist, join(contents, 'Info.plist'))
+  execFileSync('/usr/bin/codesign', ['--force', '--sign', '-', bundle])
+}
+
 export default defineConfig(({ command }) => {
   if (process.platform === 'darwin') {
     buildMacHelper('edge-glow.m', 'icon-app-edge-glow', ['AppKit', 'QuartzCore'])
-    buildMacHelper('iphone-bluetooth.m', 'icon-app-ble', ['Foundation', 'CoreBluetooth'])
+    buildPhoneHelperApp()
   }
   if (command === 'serve' && process.platform === 'darwin' && !process.env.ELECTRON_EXEC_PATH) {
     process.env.ELECTRON_EXEC_PATH = prepareMacDevElectron()

@@ -3,6 +3,8 @@ productName: Codex 提醒
 directories:
   buildResources: build
 files:
+  - '!resources/icon-app-ble'
+  - '!build/generated/**'
   - '!**/.vscode/*'
   - '!src/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
@@ -19,6 +21,9 @@ nsis:
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  extraFiles:
+    - from: build/generated/Codex Bluetooth Helper.app
+      to: Helpers/Codex Bluetooth Helper.app
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     NSBluetoothAlwaysUsageDescription: 通过蓝牙向已配对的 iPhone 发送 Codex 状态。

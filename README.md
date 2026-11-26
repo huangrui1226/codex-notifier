@@ -25,7 +25,7 @@ install -m 600 codex-reminder/resources/classify-codex-turn.py ~/.codex/classify
 两台设备打开蓝牙。Mac 应用保持运行，允许在后台接收提醒的 iPhone App 会在切换到其他 App 后通过系统横幅显示「已就绪」或「等待你的输入或授权」。手机和 Mac 之间通过系统加密蓝牙连接传递一个状态字节。首次配对还需输入 Mac 上的六位码，有效期五分钟。
 
 1. 用 Xcode 打开 [NearbyReminders.xcodeproj](iphone/NearbyReminders.xcodeproj)，在 Signing & Capabilities 选择自己的开发团队。连接 iPhone（iOS 16 或更新版本），在 Xcode 选择这台设备并运行；按系统提示开启开发者模式。如果 bundle ID 已被占用，改成自己的唯一标识。
-2. 在 Mac 的「Codex 提醒」中打开「附近的 iPhone」，允许蓝牙并点击「生成配对码」。
+2. 在 Mac 的「Codex 提醒」中打开「附近的 iPhone」。首次出现权限提示时，允许「Codex 提醒蓝牙助手」使用蓝牙，再点「生成配对码」。
 3. 在 iPhone 打开「Codex 提醒」，点「允许通知」及「查找 Mac」，填入六位码并选择附近的 Mac。按系统提示确认蓝牙配对。下次启动会自动重连之前配对的 Mac。
 4. 保持两台设备在蓝牙范围内，在手机切换到其他 App 后，从 Mac 点击「测试完成」和「测试待处理」。iPhone 通知设置里的横幅和专注模式控制实际展示。配对新手机后只有新手机会收到事件。
 

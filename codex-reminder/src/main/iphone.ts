@@ -1,7 +1,8 @@
 import { app, ipcMain } from 'electron'
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
+import { execFile } from 'node:child_process'
 import { randomInt } from 'node:crypto'
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { createServer, type Socket } from 'node:net'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import type { PhoneState, ReminderKind } from '../shared/reminders'
@@ -9,7 +10,8 @@ import type { PhoneState, ReminderKind } from '../shared/reminders'
 export function registerPhone(): (kind: ReminderKind) => boolean {
   const dir = app.getPath('userData')
   const enabledFile = join(dir, 'iphone-enabled')
-  let child: ChildProcessWithoutNullStreams | undefined
+  let channel: Socket | undefined
+  let closeSession: (() => void) | undefined
   let status: PhoneState['status'] = 'disabled'
   let code = ''
   let expires = 0
@@ -19,37 +21,75 @@ export function registerPhone(): (kind: ReminderKind) => boolean {
   }
 
   function stop(): void {
-    child?.stdin.end()
-    child = undefined
+    const close = closeSession
+    closeSession = undefined
+    close?.()
+    channel = undefined
     code = ''
     status = 'disabled'
   }
 
   function start(): void {
-    if (child || process.platform !== 'darwin') return
+    if (closeSession || process.platform !== 'darwin') return
     mkdirSync(dir, { recursive: true })
     status = 'starting'
-    const binary = join(
-      app.getAppPath().replace(/\.asar$/, '.asar.unpacked'),
-      'resources/icon-app-ble'
-    )
-    const proc = spawn(binary, [join(dir, 'iphone-peer')])
-    child = proc
-    proc.stdin.on('error', () => {})
-    proc.stderr.resume()
-    createInterface({ input: proc.stdout }).on('line', (line) => {
-      if (child !== proc) return
-      if (line === 'code-ended') code = ''
-      if (['waiting', 'connected', 'off', 'unsupported', 'denied', 'error'].includes(line))
-        status = line as PhoneState['status']
+    const helperRoot = app.isPackaged
+      ? join(process.resourcesPath, '../Helpers')
+      : join(app.getAppPath(), 'build/generated')
+    const helper = join(helperRoot, 'Codex Bluetooth Helper.app')
+    // A short, private directory also fits Darwin's Unix socket path limit.
+    const socketDir = mkdtempSync('/tmp/codex-ble-')
+    const endpoint = join(socketDir, 'link')
+    let listenerClosed = false
+    const server = createServer((socket) => {
+      if (closeSession !== close || channel) {
+        socket.destroy()
+        return
+      }
+      channel = socket
+      clearTimeout(timer)
+      closeListener()
+      socket.on('error', lost)
+      socket.on('close', lost)
+      const reports = createInterface({ input: socket })
+      reports.on('error', lost)
+      reports.on('line', (line) => {
+        if (channel !== socket) return
+        if (line === 'code-ended') code = ''
+        if (['waiting', 'connected', 'off', 'unsupported', 'denied', 'error'].includes(line))
+          status = line as PhoneState['status']
+      })
     })
-    const lost = (): void => {
-      if (child !== proc) return
+    function closeListener(): void {
+      if (listenerClosed) return
+      listenerClosed = true
+      if (server.listening) server.close()
+      rmSync(socketDir, { recursive: true, force: true })
+    }
+    function close(): void {
+      clearTimeout(timer)
+      closeListener()
+      channel?.destroy()
+    }
+    function lost(): void {
+      if (closeSession !== close) return
       stop()
       status = 'error'
     }
-    proc.on('error', lost)
-    proc.on('exit', lost)
+    closeSession = close
+    const timer = setTimeout(lost, 30000)
+    server.on('error', lost)
+    server.listen(endpoint, () => {
+      if (closeSession !== close) return
+      // LaunchServices can present the system BLE pairing sheet for this session.
+      execFile(
+        '/usr/bin/open',
+        ['-n', helper, '--args', endpoint, join(dir, 'iphone-peer')],
+        (err) => {
+          if (err) lost()
+        }
+      )
+    })
   }
 
   ipcMain.handle('iphone:state', state)
@@ -66,18 +106,18 @@ export function registerPhone(): (kind: ReminderKind) => boolean {
     return state()
   })
   ipcMain.handle('iphone:pair', () => {
-    if (!child || !['waiting', 'connected'].includes(status)) throw new Error('请先启用蓝牙')
+    if (!channel || !['waiting', 'connected'].includes(status)) throw new Error('请先启用蓝牙')
     code = String(randomInt(1000000)).padStart(6, '0')
     expires = Date.now() + 300000
-    child.stdin.write('pair ' + code + '\n')
+    channel.write('pair ' + code + '\n')
     return state()
   })
   if (existsSync(enabledFile)) start()
   app.on('before-quit', stop)
   return (kind) => {
     if (!existsSync(enabledFile)) return true
-    if (!child || status !== 'connected') return false
-    child.stdin.write(kind + '\n')
+    if (!channel || status !== 'connected') return false
+    channel.write(kind + '\n')
     return true
   }
 }

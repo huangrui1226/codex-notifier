@@ -8,4 +8,5 @@ out
 /codex-reminder/resources/.edge-glow-*/
 
 /codex-reminder/resources/icon-app-ble
+/codex-reminder/build/generated/
 **/xcuserdata/

@@ -1,6 +1,8 @@
 #import <CoreBluetooth/CoreBluetooth.h>
 #import <Foundation/Foundation.h>
 #import <sys/stat.h>
+#import <sys/socket.h>
+#import <sys/un.h>
 #import <unistd.h>
 
 static CBUUID *uuid(NSString *suffix) {
@@ -133,10 +135,17 @@ static void report(NSString *value) {
 
 int main(int argc, const char *argv[]) {
     @autoreleasepool {
-        if (argc != 2) return 2;
+        if (argc != 3) return 2;
+        struct sockaddr_un address = { .sun_family = AF_UNIX };
+        if (strlcpy(address.sun_path, argv[1], sizeof(address.sun_path)) >= sizeof(address.sun_path)) return 2;
+        address.sun_len = SUN_LEN(&address);
+        int channel = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (channel < 0 || connect(channel, (struct sockaddr *)&address, address.sun_len) != 0) return 1;
+        if (dup2(channel, STDIN_FILENO) < 0 || dup2(channel, STDOUT_FILENO) < 0) return 1;
+        if (channel > STDOUT_FILENO) close(channel);
         umask(0077);
         PhoneLink *link = [PhoneLink new];
-        link.peerFile = [NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[1]]];
+        link.peerFile = [NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[2]]];
         link.peer = [NSString stringWithContentsOfURL:link.peerFile encoding:NSUTF8StringEncoding error:NULL];
         link.pending = [NSMutableArray array];
         link.manager = [[CBPeripheralManager alloc] initWithDelegate:link queue:dispatch_get_main_queue()];
