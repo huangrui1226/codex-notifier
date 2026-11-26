@@ -1,7 +1,8 @@
 {
-  "name": "icon-app",
+  "name": "codex-reminder",
+  "productName": "Codex 提醒",
   "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "description": "Codex CLI 完成和待处理提醒",
   "main": "./out/main/index.js",
   "author": "example.com",
   "homepage": "https://electron-vite.org",

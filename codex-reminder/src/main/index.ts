@@ -1,7 +1,17 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { app, shell, BrowserWindow } from 'electron'
+import { mkdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { registerPhone } from './iphone'
+import { registerReminders } from './reminders'
 import icon from '../../resources/icon.png?asset'
+
+// Existing CLI hooks and paired iPhones use this profile across product renames.
+if (!app.commandLine.hasSwitch('user-data-dir')) {
+  const profile = join(app.getPath('appData'), 'icon-app')
+  mkdirSync(profile, { recursive: true })
+  app.setPath('userData', profile)
+}
 
 function createWindow(): void {
   // Create the browser window.
@@ -49,8 +59,8 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  registerReminders()
+  registerPhone()
 
   createWindow()
 

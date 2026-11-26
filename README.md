@@ -1,6 +1,28 @@
-# icon-app
+# Codex 提醒
 
-An Electron application with React and TypeScript
+| 项目 | 入口 |
+| --- | --- |
+| 桌面应用 | [codex-reminder/](codex-reminder/) |
+| iPhone 接收端 | [iphone/](iphone/) · [Xcode 工程](iphone/NearbyReminders.xcodeproj) |
+
+打开应用可以分别开启弹窗、声音和 macOS 屏幕边缘光。「测试完成」预览绿色，「测试待处理」预览橙色。两种光效都向屏幕中心渐隐并呼吸三次。
+
+Codex CLI 的 `notify` 回调通过 `/bin/sh` 调用 `codex-reminder/resources/notify-macos.sh`。脚本在本地核对会话记录，只有回调对应主对话当前轮的最终回答才显示绿色。如果回答末尾明确要求回复、选择或确认，则按中英文常见表达识别并显示橙色。自然语言识别可能遗漏或误判。缺少会话记录或最终回答标记时会跳过这次回调。
+
+授权和结构化提问通过 [Codex hooks](https://learn.chatgpt.com/docs/hooks) 触发。将 `codex-reminder/resources/codex-attention-hooks.json` 中的条目合并到用户级 `~/.codex/hooks.json`，再在 Codex CLI 的 `/hooks` 中审阅并信任这三个提醒项。它们监听 `PermissionRequest`，以及请求用户输入或申请权限的 `PreToolUse`；授权操作仍由用户在 Codex 中完成。其他应用内部的弹窗只有在 Codex 发出相应事件时才会触发。
+
+本机 hooks 调用 `~/.codex/icon-app-reminder.sh`，它是 `codex-reminder/resources/notify-macos.sh` 的安装副本。将同目录的 `classify-codex-turn.py` 和构建生成的 `icon-app-edge-glow` 一并安装即可在应用退出后继续提醒。ChatGPT 普通聊天使用桌面客户端自己的通知设置。
+
+## iPhone 蓝牙提醒
+
+两台设备打开蓝牙。Mac 应用保持运行，允许在后台接收提醒的 iPhone App 会在切换到其他 App 后通过系统横幅显示「已就绪」或「等待你的输入或授权」。手机和 Mac 之间通过系统加密蓝牙连接传递一个状态字节。首次配对还需输入 Mac 上的六位码，有效期五分钟。
+
+1. 用 Xcode 打开 [NearbyReminders.xcodeproj](iphone/NearbyReminders.xcodeproj)，在 Signing & Capabilities 选择自己的开发团队。连接 iPhone（iOS 16 或更新版本），在 Xcode 选择这台设备并运行；按系统提示开启开发者模式。如果 bundle ID 已被占用，改成自己的唯一标识。
+2. 在 Mac 的「Codex 提醒」中打开「附近的 iPhone」，允许蓝牙并点击「生成配对码」。
+3. 在 iPhone 打开「Codex 提醒」，点「允许通知」及「查找 Mac」，填入六位码并选择附近的 Mac。按系统提示确认蓝牙配对。下次启动会自动重连之前配对的 Mac。
+4. 保持两台设备在蓝牙范围内，在手机切换到其他 App 后，从 Mac 点击「测试完成」和「测试待处理」。iPhone 通知设置里的横幅和专注模式控制实际展示。配对新手机后只有新手机会收到事件。
+
+离线期间的手机提醒不补发。手动从多任务界面划掉 iPhone App 后，需重新打开它恢复接收。桌面提醒可以在 Mac 应用退出时继续使用，蓝牙转发需要 Mac 应用运行。开发版与打包版建议只运行一个。
 
 ## Recommended IDE Setup
 
@@ -8,10 +30,13 @@ An Electron application with React and TypeScript
 
 ## Project Setup
 
+桌面项目的以下命令均在 `codex-reminder/` 内运行。
+
 ### Install
 
 ```bash
-$ npm install
+cd codex-reminder
+npm install
 ```
 
 ### Development

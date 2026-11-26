@@ -1,0 +1,34 @@
+{
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh \"$HOME/.codex/icon-app-reminder.sh\" --hook approval"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^(functions\\.)?request_user_input(_async)?$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh \"$HOME/.codex/icon-app-reminder.sh\" --hook input"
+          }
+        ]
+      },
+      {
+        "matcher": "^(functions\\.)?(request_permissions|request_rule)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh \"$HOME/.codex/icon-app-reminder.sh\" --hook approval"
+          }
+        ]
+      }
+    ]
+  }
+}

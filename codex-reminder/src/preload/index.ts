@@ -1,8 +1,18 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-// Custom APIs for renderer
-const api = {}
+import type { ReminderAPI } from '../shared/reminders'
+
+const api: ReminderAPI = {
+  phoneState: () => ipcRenderer.invoke('iphone:state'),
+  enablePhone: (enabled) => ipcRenderer.invoke('iphone:enable', enabled),
+  pairPhone: () => ipcRenderer.invoke('iphone:pair'),
+  supportsEdgeGlow: process.platform === 'darwin',
+  getSettings: () => ipcRenderer.invoke('reminders:read'),
+  saveSettings: (settings) => ipcRenderer.invoke('reminders:save', settings),
+  test: (kind) => ipcRenderer.invoke('reminders:test', kind),
+  openChatGPTSettings: () => ipcRenderer.invoke('reminders:chatgpt-settings')
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

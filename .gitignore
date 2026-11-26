@@ -4,3 +4,8 @@ out
 .DS_Store
 .eslintcache
 *.log*
+/codex-reminder/resources/icon-app-edge-glow
+/codex-reminder/resources/.edge-glow-*/
+
+/codex-reminder/resources/icon-app-ble
+**/xcuserdata/
