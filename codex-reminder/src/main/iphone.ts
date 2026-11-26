@@ -1,27 +1,15 @@
 import { app, ipcMain } from 'electron'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
-import { randomInt, randomUUID } from 'node:crypto'
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync
-} from 'node:fs'
-import { createServer, type Server } from 'node:net'
+import { randomInt } from 'node:crypto'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
-import type { PhoneState } from '../shared/reminders'
+import type { PhoneState, ReminderKind } from '../shared/reminders'
 
-export function registerPhone(): void {
+export function registerPhone(): (kind: ReminderKind) => boolean {
   const dir = app.getPath('userData')
   const enabledFile = join(dir, 'iphone-enabled')
-  const route = join(dir, 'iphone-route')
   let child: ChildProcessWithoutNullStreams | undefined
-  let server: Server | undefined
-  let socketPath = ''
   let status: PhoneState['status'] = 'disabled'
   let code = ''
   let expires = 0
@@ -31,9 +19,6 @@ export function registerPhone(): void {
   }
 
   function stop(): void {
-    if (socketPath && existsSync(route) && readFileSync(route, 'utf8') === socketPath) rmSync(route)
-    server?.close()
-    server = undefined
     child?.stdin.end()
     child = undefined
     code = ''
@@ -65,34 +50,6 @@ export function registerPhone(): void {
     }
     proc.on('error', lost)
     proc.on('exit', lost)
-    // Only a local Unix socket is exposed. Each running copy owns its own socket.
-    socketPath = join(app.getPath('temp'), 'ir-' + randomUUID().slice(0, 12))
-    const path = socketPath
-    server = createServer({ allowHalfOpen: true }, (socket) => {
-      socket.setEncoding('utf8')
-      socket.setTimeout(1000, () => socket.destroy())
-      socket.on('error', () => {})
-      let input = ''
-      socket.on('data', (part) => {
-        input += part
-        if (input.length > 12) socket.destroy()
-      })
-      socket.on('end', () => {
-        const kind = input.trim()
-        const ready =
-          child === proc && status === 'connected' && (kind === 'completed' || kind === 'attention')
-        if (ready) proc.stdin.write(kind + '\n')
-        socket.end(ready ? 'ok' : 'offline')
-      })
-    })
-    server.on('error', lost)
-    server.listen(path, () => {
-      if (child !== proc) return
-      chmodSync(path, 0o600)
-      const temp = route + '.' + process.pid
-      writeFileSync(temp, path, { mode: 0o600 })
-      renameSync(temp, route)
-    })
   }
 
   ipcMain.handle('iphone:state', state)
@@ -117,4 +74,10 @@ export function registerPhone(): void {
   })
   if (existsSync(enabledFile)) start()
   app.on('before-quit', stop)
+  return (kind) => {
+    if (!existsSync(enabledFile)) return true
+    if (!child || status !== 'connected') return false
+    child.stdin.write(kind + '\n')
+    return true
+  }
 }

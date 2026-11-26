@@ -9,9 +9,16 @@
 
 Codex CLI 的 `notify` 回调通过 `/bin/sh` 调用 `codex-reminder/resources/notify-macos.sh`。脚本在本地核对会话记录，只有回调对应主对话当前轮的最终回答才显示绿色。如果回答末尾明确要求回复、选择或确认，则按中英文常见表达识别并显示橙色。自然语言识别可能遗漏或误判。缺少会话记录或最终回答标记时会跳过这次回调。
 
-授权和结构化提问通过 [Codex hooks](https://learn.chatgpt.com/docs/hooks) 触发。将 `codex-reminder/resources/codex-attention-hooks.json` 中的条目合并到用户级 `~/.codex/hooks.json`，再在 Codex CLI 的 `/hooks` 中审阅并信任这三个提醒项。它们监听 `PermissionRequest`，以及请求用户输入或申请权限的 `PreToolUse`；授权操作仍由用户在 Codex 中完成。其他应用内部的弹窗只有在 Codex 发出相应事件时才会触发。
+授权和结构化提问通过 [Codex hooks](https://learn.chatgpt.com/docs/hooks) 触发。将 `codex-reminder/resources/codex-attention-hooks.json` 中的条目合并到用户级 `~/.codex/hooks.json`，再在 Codex CLI 的 `/hooks` 中审阅并信任这三个提醒项。授权请求只有在能确认当前轮使用人工审批时才会触发橙光。选择「帮我批准」后，自动审批会静默处理，Codex 明确向你提问时仍会提醒。
 
-本机 hooks 调用 `~/.codex/icon-app-reminder.sh`，它是 `codex-reminder/resources/notify-macos.sh` 的安装副本。将同目录的 `classify-codex-turn.py` 和构建生成的 `icon-app-edge-glow` 一并安装即可在应用退出后继续提醒。ChatGPT 普通聊天使用桌面客户端自己的通知设置。
+本机 hooks 调用 `~/.codex/icon-app-reminder.sh`。该脚本只向正在运行的 Mac 应用转发事件。关闭窗口后应用仍可接收提醒，按 **⌘Q** 退出即可暂停桌面和 iPhone 的所有新提醒，重新打开应用会恢复。退出期间的事件会被丢弃。删除应用后，即使 CLI 仍保留回调也不会触发提醒。ChatGPT 普通聊天使用桌面客户端自己的通知设置。
+
+新版 Mac 应用首次运行时会更新本项目的原版旧脚本。如果需要手动安装或更新，从仓库根目录运行以下命令，然后通过 Codex CLI 的 `notify` 或已有回调调用 `/bin/sh "$HOME/.codex/icon-app-reminder.sh"`，将事件参数原样传入。
+
+```sh
+install -m 700 codex-reminder/resources/notify-macos.sh ~/.codex/icon-app-reminder.sh
+install -m 600 codex-reminder/resources/classify-codex-turn.py ~/.codex/classify-codex-turn.py
+```
 
 ## iPhone 蓝牙提醒
 
@@ -22,7 +29,7 @@ Codex CLI 的 `notify` 回调通过 `/bin/sh` 调用 `codex-reminder/resources/n
 3. 在 iPhone 打开「Codex 提醒」，点「允许通知」及「查找 Mac」，填入六位码并选择附近的 Mac。按系统提示确认蓝牙配对。下次启动会自动重连之前配对的 Mac。
 4. 保持两台设备在蓝牙范围内，在手机切换到其他 App 后，从 Mac 点击「测试完成」和「测试待处理」。iPhone 通知设置里的横幅和专注模式控制实际展示。配对新手机后只有新手机会收到事件。
 
-离线期间的手机提醒不补发。手动从多任务界面划掉 iPhone App 后，需重新打开它恢复接收。桌面提醒可以在 Mac 应用退出时继续使用，蓝牙转发需要 Mac 应用运行。开发版与打包版建议只运行一个。
+离线期间的手机提醒不补发。手动从多任务界面划掉 iPhone App 后，需重新打开它恢复接收。
 
 ## Recommended IDE Setup
 

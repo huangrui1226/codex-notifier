@@ -1,4 +1,4 @@
-"""Classify a legacy Codex notify payload. Emit no conversation content."""
+"""Classify Codex completion and approval events. Emit no conversation content."""
 import json
 import os
 from pathlib import Path
@@ -41,18 +41,52 @@ def has_final_answer(path, thread_id, turn_id, message):
     return matches
 
 
+def session_path(thread_id):
+    uuid_pattern = r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}"
+    if not isinstance(thread_id, str) or not re.fullmatch(uuid_pattern, thread_id):
+        return None
+    sessions = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex") / "sessions"
+    paths = sessions.glob(f"*/*/*/rollout-*{thread_id}.jsonl")
+    return max(paths, key=lambda candidate: candidate.stat().st_mtime_ns, default=None)
+
+
+def classify_approval(event):
+    if not isinstance(event, dict) or event.get("hook_event_name") not in ("PermissionRequest", "PreToolUse"):
+        return "ignore"
+    turn = event.get("turn_id")
+    if not isinstance(turn, str) or not turn or event.get("permission_mode") == "dontAsk":
+        return "ignore"
+    try:
+        path = session_path(event.get("session_id"))
+        if path is None:
+            return "ignore"
+        # Hooks fire before approval routing. Use this turn's effective settings,
+        # which can differ from config.toml and from other concurrent sessions.
+        result = "ignore"
+        with path.open("rb") as transcript:
+            for line in transcript:
+                if not any(key in line for key in (b'"turn_context"', b'"task_started"', b'"task_complete"', b'"turn_aborted"')):
+                    continue
+                row = json.loads(line)
+                item = row["payload"]
+                if row["type"] == "turn_context":
+                    manual = (item.get("turn_id") == turn and item.get("approvals_reviewer") == "user"
+                              and item.get("approval_policy") != "never")
+                    result = "approval" if manual else "ignore"
+                elif row["type"] == "event_msg" and item.get("type") in ("task_started", "task_complete", "turn_aborted"):
+                    result = "ignore"
+        return result
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return "ignore"
+
+
 def confirmed_final(event, message):
     thread_id = event.get("thread-id")
     turn_id = event.get("turn-id")
-    uuid_pattern = r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}"
-    if not isinstance(thread_id, str) or not re.fullmatch(uuid_pattern, thread_id):
-        return False
     if not isinstance(turn_id, str) or not turn_id:
         return False
-    sessions = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex") / "sessions"
-    paths = sessions.glob(f"*/*/*/rollout-*{thread_id}.jsonl")
     try:
-        path = max(paths, key=lambda candidate: candidate.stat().st_mtime_ns, default=None)
+        path = session_path(thread_id)
         if path:
             # The notify callback can race the transcript writer's last flush.
             for delay in (0, 0.15, 0.35):
@@ -96,6 +130,7 @@ def classify(event):
 
 if __name__ == "__main__":
     try:
-        print(classify(json.load(sys.stdin)))
+        event = json.load(sys.stdin)
+        print(classify_approval(event) if sys.argv[1:] == ["--approval"] else classify(event))
     except (ValueError, UnicodeError):
         print("ignore")

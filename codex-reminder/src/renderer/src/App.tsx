@@ -88,7 +88,7 @@ function App(): React.JSX.Element {
   return (
     <main>
       <h1>回答完成提醒</h1>
-      <p className="intro">选择 Codex CLI 完成回答或需要你参与时的提醒方式。</p>
+      <p className="intro">应用运行期间接收 Codex CLI 提醒。退出应用即可暂停所有提醒。</p>
       <section className="settings" aria-label="Codex CLI 提醒方式">
         {options.map(({ key, title, description }) => (
           <div className="row" key={key}>

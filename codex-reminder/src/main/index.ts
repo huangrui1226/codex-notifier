@@ -45,6 +45,18 @@ function createWindow(): void {
   }
 }
 
+if (process.platform === 'darwin') {
+  if (!app.requestSingleInstanceLock()) app.exit(0)
+  app.on('second-instance', () => {
+    const window = BrowserWindow.getAllWindows()[0]
+    if (window) {
+      if (window.isMinimized()) window.restore()
+      window.show()
+      window.focus()
+    } else if (app.isReady()) createWindow()
+  })
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -59,8 +71,8 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  registerReminders()
-  registerPhone()
+  const sendToPhone = registerPhone()
+  registerReminders(sendToPhone)
 
   createWindow()
 
