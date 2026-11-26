@@ -127,7 +127,9 @@ final class Receiver: NSObject, ObservableObject, CBCentralManagerDelegate, CBPe
         indicator = nil
         code = nil
         status = "已断开，等待 Mac 回到附近。"
-        reconnect()
+        if !searching, manager.state == .poweredOn, savedID != nil {
+            manager.scanForPeripherals(withServices: [serviceID])
+        }
     }
 
     func centralManager(_ central: CBCentralManager, didFailToConnect mac: CBPeripheral, error: Error?) {
@@ -148,10 +150,22 @@ final class Receiver: NSObject, ObservableObject, CBCentralManagerDelegate, CBPe
         manager.cancelPeripheralConnection(mac)
     }
 
+    private func serviceUnavailable(on mac: CBPeripheral) {
+        guard mac.identifier == savedID, code == nil else {
+            return fail("Mac 提醒服务不可用，请重新配对。", mac: mac)
+        }
+        // The Mac can remain in radio range while its helper restarts.
+        // Resume discovery after disconnect so we only reconnect once it advertises again.
+        indicator = nil
+        mac.delegate = nil
+        status = "正在等待已配对的 Mac 重新开启提醒。"
+        manager.cancelPeripheralConnection(mac)
+    }
+
     func peripheral(_ mac: CBPeripheral, didDiscoverServices error: Error?) {
         guard device === mac else { return }
         guard error == nil, let service = mac.services?.first(where: { $0.uuid == serviceID }) else {
-            return fail("Mac 提醒服务不可用，请重新配对。", mac: mac)
+            return serviceUnavailable(on: mac)
         }
         mac.discoverCharacteristics([pairingID, eventID], for: service)
     }
@@ -161,16 +175,23 @@ final class Receiver: NSObject, ObservableObject, CBCentralManagerDelegate, CBPe
         indicator = service.characteristics?.first { $0.uuid == eventID }
         guard error == nil, indicator != nil,
               let pairing = service.characteristics?.first(where: { $0.uuid == pairingID }) else {
-            return fail("无法读取 Mac 提醒服务。", mac: mac)
+            return serviceUnavailable(on: mac)
         }
         mac.writeValue(Data((code ?? "resume").utf8), for: pairing, type: .withResponse)
     }
 
     func peripheral(_ mac: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         guard device === mac, characteristic.uuid == pairingID else { return }
-        guard error == nil, let indicator else {
-            return fail("配对未通过。请在 Mac 生成新配对码并重试。", mac: mac)
+        if let error {
+            let message: String
+            if let attError = error as? CBATTError, attError.code == .insufficientAuthorization {
+                message = "Mac 未接受这次配对。请在这台 Mac 上生成新码，再点「查找 Mac」重新配对。"
+            } else {
+                message = "蓝牙写入失败：\(error.localizedDescription) 请点「查找 Mac」重试。如果系统显示配对数字，请在两端核对并确认。"
+            }
+            return fail(message, mac: mac)
         }
+        guard let indicator else { return fail("无法读取 Mac 提醒服务。", mac: mac) }
         code = nil
         UserDefaults.standard.set(mac.identifier.uuidString, forKey: "pairedMac")
         mac.setNotifyValue(true, for: indicator)
@@ -183,7 +204,11 @@ final class Receiver: NSObject, ObservableObject, CBCentralManagerDelegate, CBPe
 
     func peripheral(_ mac: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
         if device === mac && invalidatedServices.contains(where: { $0.uuid == serviceID }) {
-            mac.discoverServices([serviceID])
+            if mac.identifier == savedID, code == nil {
+                serviceUnavailable(on: mac)
+            } else {
+                mac.discoverServices([serviceID])
+            }
         }
     }
 
