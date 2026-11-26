@@ -194,7 +194,7 @@ final class Receiver: NSObject, ObservableObject, CBCentralManagerDelegate, CBPe
         let content = UNMutableNotificationContent()
         content.title = "Codex"
         content.body = value == 1 ? "🟢 已就绪" : "🟠 等待你的输入或授权"
-        content.sound = .default
+        content.sound = value == 1 ? .default : UNNotificationSound(named: UNNotificationSoundName("attention.wav"))
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString,
                                                                       content: content, trigger: nil))
     }

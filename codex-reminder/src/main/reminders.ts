@@ -5,6 +5,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { setTimeout as delay } from 'node:timers/promises'
 import type { ReminderKind, ReminderSettings } from '../shared/reminders'
 import macNotifier from '../../resources/show-reminder.sh?asset&asarUnpack'
 import cliForwarder from '../../resources/notify-macos.sh?asset&asarUnpack'
@@ -132,7 +133,13 @@ export function registerReminders(sendToPhone: (kind: ReminderKind) => boolean):
         silent: true
       }).show()
     }
-    if (settings.sound) shell.beep()
+    if (settings.sound) {
+      shell.beep()
+      if (kind === 'attention') {
+        await delay(300)
+        shell.beep()
+      }
+    }
   })
   ipcMain.handle('reminders:chatgpt-settings', () => shell.openExternal('codex://settings'))
 }

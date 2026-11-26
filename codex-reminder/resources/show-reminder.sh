@@ -61,7 +61,11 @@ APPLESCRIPT
   fi
 fi
 if [ "$sound" = true ]; then
-  /usr/bin/afplay /System/Library/Sounds/Glass.aiff || result=1
+  case "$kind" in
+    completed) tone=/System/Library/Sounds/Glass.aiff ;;
+    attention) tone="$(dirname "$0")/attention.wav" ;;
+  esac
+  /usr/bin/afplay "$tone" || result=1
 fi
 if [ -n "$glow_pid" ]; then
   wait "$glow_pid" || result=1

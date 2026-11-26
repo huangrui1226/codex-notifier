@@ -7,11 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7E13A6324E0C49B5B390D1F2 /* attention.wav in Resources */ = {isa = PBXBuildFile; fileRef = B538947DB1004A2D80E7BBFF /* attention.wav */; };
 		53666D2BF5DD41C6B2D91870 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D1343FD136F1DEB4A7CD804C /* Foundation.framework */; };
 		91B37F4A354780AD66C87EE4 /* Receiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525FCEF59DD9FC9425AA5890 /* Receiver.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B538947DB1004A2D80E7BBFF /* attention.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = attention.wav; path = "../codex-reminder/resources/attention.wav"; sourceTree = SOURCE_ROOT; };
 		525FCEF59DD9FC9425AA5890 /* Receiver.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Receiver.swift; sourceTree = "<group>"; };
 		5982306182ED5678A2F02436 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D1343FD136F1DEB4A7CD804C /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
@@ -60,6 +62,7 @@
 				29B24C2E715062775310F469 /* Products */,
 				0AFA5990B8893E224C9EF0B3 /* Frameworks */,
 				525FCEF59DD9FC9425AA5890 /* Receiver.swift */,
+				B538947DB1004A2D80E7BBFF /* attention.wav */,
 				5982306182ED5678A2F02436 /* Info.plist */,
 			);
 			sourceTree = "<group>";
@@ -118,6 +121,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7E13A6324E0C49B5B390D1F2 /* attention.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
