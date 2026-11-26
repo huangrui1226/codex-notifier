@@ -1,4 +1,6 @@
-# Codex 提醒
+# Codex Notifier
+
+当 Codex CLI 完成任务或需要你输入、授权时，Codex Notifier 会在 Mac 或已连接的 iPhone 上提醒你。
 
 | 项目 | 入口 |
 | --- | --- |
