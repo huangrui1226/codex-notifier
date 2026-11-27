@@ -21,19 +21,15 @@ npm run dev
 
 ## 接入 Codex CLI
 
-**1. 打开 Mac 上的「Codex 叮咚」。** 应用启动时会自动将缺少的转发脚本 `icon-app-reminder.sh` 和会话分类脚本 `classify-codex-turn.py` 安装到 `~/.codex/`。应用会更新可识别的旧版脚本，并保留你修改过的版本。
+**1. 打开 Mac 上的「Codex 叮咚」。** 应用启动时会将缺少的转发脚本和会话分类脚本安装到 `~/.codex/`，配置 `config.toml` 的顶层 `notify`，并将三个提醒项合并到 `hooks.json`。如果你已经设置了 `notify`，原回调会继续收到相同的事件和参数。已有 hooks 和自定义脚本会保留，重复启动也只会补齐缺少的配置。
 
-**2. 接收回答完成和等待回复事件。** 在 `~/.codex/config.toml` 顶层设置 `notify`，把示例路径换成转发脚本的实际绝对路径。如果已经配置了回调，可以在原回调中调用转发脚本，并将事件参数原样传入。
+配置文件默认位于 `~/.codex/`。如果应用启动时设置了 `CODEX_HOME`，应用会从该目录读写配置。遇到格式或写入错误时，应用会提示对应的文件，修复后重新打开应用即可重试。
 
-```toml
-notify = ["/bin/sh", "/Users/你的用户名/.codex/icon-app-reminder.sh"]
-```
+**2. 在 Codex CLI 中信任提醒项。** 重新打开 Codex CLI，在 `/hooks` 中审阅并信任「Codex 叮咚」添加的三个提醒项，以接收人工授权和结构化提问提醒。[查看提醒项](codex-reminder/resources/codex-attention-hooks.json)
 
-转发脚本只处理主对话当前轮的最终回答。回答末尾明确要求回复、选择或确认时，脚本会按常见中英文表达识别为待处理，因此可能误判或漏判。缺少对应会话记录或最终回答标记时，脚本会跳过该事件。
+**3. 验证接入。** 保持 Mac 应用运行，在新的 Codex CLI 会话中发起一个简单请求，等它给出最终回答并确认收到提醒。ChatGPT 普通聊天的提醒由桌面客户端自己的通知设置控制。
 
-**3. 接收授权和结构化提问。** 将模板中的三个 hook 条目合并到 `~/.codex/hooks.json`，保留已有条目。重新打开 Codex CLI，在 `/hooks` 中审阅并信任这三个提醒项。只有确认当前轮使用人工审批时才会发出授权提醒，自动审批期间的明确提问仍会提醒。[Hook 配置模板](codex-reminder/resources/codex-attention-hooks.json)
-
-**4. 验证接入。** 保持 Mac 应用运行，在新的 Codex CLI 会话中发起一个简单请求，等它给出最终回答。如果应用内测试成功，但真实回答没有提醒，先核对 `notify` 的绝对路径以及两个脚本是否在同一目录。ChatGPT 普通聊天的提醒由桌面客户端自己的通知设置控制。
+转发脚本只处理主对话当前轮的最终回答。回答末尾明确要求回复、选择或确认时，脚本会按常见中英文表达识别为待处理，因此可能误判或漏判。缺少对应会话记录或最终回答标记时，脚本会跳过该事件。只有确认当前轮使用人工审批时才会发出授权提醒，自动审批期间的明确提问仍会提醒。
 
 ## 配对附近的 iPhone
 
@@ -52,6 +48,7 @@ notify = ["/bin/sh", "/Users/你的用户名/.codex/icon-app-reminder.sh"]
 | --- | --- |
 | `npm run dev` | 启动 Electron 开发应用 |
 | `npm run lint` | 运行 ESLint |
+| `npm run test:config` | 检查 CLI 配置合并、回调转发和重复启动 |
 | `python3 -B -m unittest discover -s tests` | 检查会话分类和本地事件转发 |
 | `npm run build` | 运行 TypeScript 类型检查并构建桌面应用，输出到 `out/` |
 | `npm run build:mac` | 生成 macOS 安装包，输出到 `dist/` |

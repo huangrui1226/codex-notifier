@@ -1,4 +1,4 @@
-import { app, ipcMain, Notification, shell } from 'electron'
+import { app, dialog, ipcMain, Notification, shell } from 'electron'
 import {
   chmodSync,
   existsSync,
@@ -8,6 +8,7 @@ import {
   readFileSync,
   renameSync,
   rmSync,
+  statSync,
   writeFileSync
 } from 'node:fs'
 import { createServer } from 'node:net'
@@ -17,6 +18,7 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { setTimeout as delay } from 'node:timers/promises'
 import type { ReminderKind, ReminderSettings } from '../shared/reminders'
+import { mergeHooks, mergeNotify, updateCliConfig } from './cli-config.mjs'
 import type { PhoneDelivery } from './iphone'
 import macNotifier from '../../resources/show-reminder.sh?asset&asarUnpack'
 import cliForwarder from '../../resources/notify-macos.sh?asset&asarUnpack'
@@ -32,25 +34,70 @@ function installCliScript(
 ): void {
   const directory = join(app.getPath('home'), '.codex')
   const hook = join(directory, name)
+  mkdirSync(directory, { recursive: true, mode: 0o700 })
+  const installed = lstatSync(hook, { throwIfNoEntry: false })
+  if (installed) {
+    if (!installed.isFile()) {
+      if (installed.isSymbolicLink() && statSync(hook).isFile()) return
+      throw new Error(`${hook} 应指向脚本文件`)
+    }
+    const digest = createHash('sha256').update(readFileSync(hook)).digest('hex')
+    if (!previousDigests.includes(digest)) return
+  }
+  const temp = hook + '.' + randomUUID()
   try {
-    mkdirSync(directory, { recursive: true, mode: 0o700 })
-    const installed = lstatSync(hook, { throwIfNoEntry: false })
-    if (installed) {
-      if (!installed.isFile()) return
-      const digest = createHash('sha256').update(readFileSync(hook)).digest('hex')
-      if (!previousDigests.includes(digest)) return
-    }
-    const temp = hook + '.' + randomUUID()
-    try {
-      writeFileSync(temp, readFileSync(source), { mode, flag: 'wx' })
-      if (installed) renameSync(temp, hook)
-      else linkSync(temp, hook)
-    } finally {
-      rmSync(temp, { force: true })
-    }
+    writeFileSync(temp, readFileSync(source), { mode, flag: 'wx' })
+    if (installed) renameSync(temp, hook)
+    else linkSync(temp, hook)
+  } finally {
+    rmSync(temp, { force: true })
+  }
+}
+
+function configureCliReminders(): void {
+  const scripts = join(app.getPath('home'), '.codex')
+  const config = process.env.CODEX_HOME || scripts
+  try {
+    installCliScript('classify-codex-turn.py', cliClassifier, 0o600, [
+      '0b73ddd4f543f5e4ffba1ccf59cb9a97d43a8fdc6691d37461ada2e5b808bd05'
+    ])
+    installCliScript('icon-app-reminder.sh', cliForwarder, 0o700, [
+      '40f7f29c7392cd10283153275f23c725ef2174abc9d6039824fee464968dc23c',
+      'a777c88c2394d30e625ad5e0068ba0c554bed936970652bf270732d76dbfb686',
+      '4b602050fa3581b28f9e563873b946013d10f9b687488dcd1e569d18bfdd3fd3'
+    ])
+    mkdirSync(config, { recursive: true, mode: 0o700 })
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'EEXIST')
-      console.error(`安装提醒脚本 ${name} 失败`, error)
+    console.error('准备 Codex CLI 提醒失败', error)
+    void dialog.showMessageBox({
+      type: 'warning',
+      message: '无法安装 CLI 提醒，请检查配置目录的写入权限后重新打开应用。'
+    })
+    return
+  }
+
+  const failed: string[] = []
+  for (const { name, initial, merge } of [
+    {
+      name: 'config.toml',
+      initial: '',
+      merge: (text: string) => mergeNotify(text, join(scripts, 'icon-app-reminder.sh'))
+    },
+    { name: 'hooks.json', initial: '{}\n', merge: mergeHooks }
+  ]) {
+    const file = join(config, name)
+    try {
+      updateCliConfig(file, initial, merge)
+    } catch {
+      failed.push(file)
+    }
+  }
+  if (failed.length) {
+    void dialog.showMessageBox({
+      type: 'warning',
+      message: '部分 Codex CLI 提醒配置未能写入',
+      detail: failed.join('\n') + '\n请检查文件格式和写入权限后重新打开应用。'
+    })
   }
 }
 
@@ -129,14 +176,7 @@ export function registerReminders(
   }
   if (process.platform === 'darwin') {
     if (!app.commandLine.hasSwitch('user-data-dir')) {
-      installCliScript('classify-codex-turn.py', cliClassifier, 0o600, [
-        '0b73ddd4f543f5e4ffba1ccf59cb9a97d43a8fdc6691d37461ada2e5b808bd05'
-      ])
-      installCliScript('icon-app-reminder.sh', cliForwarder, 0o700, [
-        '40f7f29c7392cd10283153275f23c725ef2174abc9d6039824fee464968dc23c',
-        'a777c88c2394d30e625ad5e0068ba0c554bed936970652bf270732d76dbfb686',
-        '4b602050fa3581b28f9e563873b946013d10f9b687488dcd1e569d18bfdd3fd3'
-      ])
+      configureCliReminders()
     }
     listenForCliEvents(deliver)
   }
