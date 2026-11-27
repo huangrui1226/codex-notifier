@@ -1,5 +1,7 @@
 import type { PhoneState } from '../../../shared/reminders'
 
+import { Icon } from './Icon'
+
 const labels: Record<PhoneState['status'], string> = {
   disabled: '关闭',
   starting: '蓝牙启动中',
@@ -30,16 +32,22 @@ export function PhoneLink({
   return (
     <div className="phone-row">
       <div className="row">
-        <div>
+        <span className="channel-icon">
+          <Icon name="phone" />
+        </span>
+        <div className="row-copy">
           <label id="phone-label" htmlFor="phone-switch">
             附近的 iPhone
           </label>
-          <p>{phone?.enabled ? labels[phone.status] : '通过蓝牙发送已就绪和待处理提醒。'}</p>
+          <p id="phone-description">
+            {phone?.enabled ? labels[phone.status] : '通过蓝牙发送已就绪和待处理提醒。'}
+          </p>
         </div>
         <button
           id="phone-switch"
           role="switch"
           aria-labelledby="phone-label"
+          aria-describedby="phone-description"
           aria-checked={phone?.enabled ?? false}
           disabled={!phone}
           onClick={() => change(window.api.enablePhone(!phone?.enabled))}
@@ -59,7 +67,7 @@ export function PhoneLink({
             </strong>
           )}
           <button
-            className="link"
+            className="button"
             disabled={!['waiting', 'connected'].includes(phone.status)}
             onClick={() => change(window.api.pairPhone())}
           >
