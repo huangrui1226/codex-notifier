@@ -14,7 +14,6 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
-    "icon:mac": "swift build/generate-icon.swift",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "install-electron && electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
