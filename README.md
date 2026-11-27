@@ -21,13 +21,7 @@ npm run dev
 
 ## 接入 Codex CLI
 
-**1. 安装转发脚本。** 从仓库根目录执行一次。脚本会在本机核对会话记录，并把识别出的事件转发给运行中的 Mac 应用。
-
-```sh
-mkdir -p "$HOME/.codex"
-install -m 700 codex-reminder/resources/notify-macos.sh "$HOME/.codex/icon-app-reminder.sh"
-install -m 600 codex-reminder/resources/classify-codex-turn.py "$HOME/.codex/classify-codex-turn.py"
-```
+**1. 打开 Mac 上的「Codex 提醒」。** 应用启动时会自动将缺少的转发脚本 `icon-app-reminder.sh` 和会话分类脚本 `classify-codex-turn.py` 安装到 `~/.codex/`。应用会更新可识别的旧版脚本，并保留你修改过的版本。
 
 **2. 接收回答完成和等待回复事件。** 在 `~/.codex/config.toml` 顶层设置 `notify`，把示例路径换成转发脚本的实际绝对路径。如果已经配置了回调，可以在原回调中调用转发脚本，并将事件参数原样传入。
 

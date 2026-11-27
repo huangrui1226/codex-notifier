@@ -1,5 +1,15 @@
 import { app, ipcMain, Notification, shell } from 'electron'
-import { chmodSync, existsSync, readFileSync, writeFileSync, renameSync, rmSync } from 'node:fs'
+import {
+  chmodSync,
+  existsSync,
+  linkSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs'
 import { createServer } from 'node:net'
 import { createHash, randomUUID } from 'node:crypto'
 import { join } from 'node:path'
@@ -14,17 +24,33 @@ import cliClassifier from '../../resources/classify-codex-turn.py?asset&asarUnpa
 
 type MacEvent = 'completed' | 'reply' | 'approval' | 'input'
 
-function updateInstalledScript(name: string, source: string, previousDigests: string[]): void {
-  const hook = join(app.getPath('home'), '.codex', name)
+function installCliScript(
+  name: string,
+  source: string,
+  mode: number,
+  previousDigests: string[]
+): void {
+  const directory = join(app.getPath('home'), '.codex')
+  const hook = join(directory, name)
   try {
-    const digest = createHash('sha256').update(readFileSync(hook)).digest('hex')
-    if (!previousDigests.includes(digest)) return
+    mkdirSync(directory, { recursive: true, mode: 0o700 })
+    const installed = lstatSync(hook, { throwIfNoEntry: false })
+    if (installed) {
+      if (!installed.isFile()) return
+      const digest = createHash('sha256').update(readFileSync(hook)).digest('hex')
+      if (!previousDigests.includes(digest)) return
+    }
     const temp = hook + '.' + randomUUID()
-    writeFileSync(temp, readFileSync(source), { mode: 0o700, flag: 'wx' })
-    renameSync(temp, hook)
+    try {
+      writeFileSync(temp, readFileSync(source), { mode, flag: 'wx' })
+      if (installed) renameSync(temp, hook)
+      else linkSync(temp, hook)
+    } finally {
+      rmSync(temp, { force: true })
+    }
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
-      console.error('更新旧版提醒脚本失败', error)
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST')
+      console.error(`安装提醒脚本 ${name} 失败`, error)
   }
 }
 
@@ -103,10 +129,10 @@ export function registerReminders(
   }
   if (process.platform === 'darwin') {
     if (!app.commandLine.hasSwitch('user-data-dir')) {
-      updateInstalledScript('classify-codex-turn.py', cliClassifier, [
+      installCliScript('classify-codex-turn.py', cliClassifier, 0o600, [
         '0b73ddd4f543f5e4ffba1ccf59cb9a97d43a8fdc6691d37461ada2e5b808bd05'
       ])
-      updateInstalledScript('icon-app-reminder.sh', cliForwarder, [
+      installCliScript('icon-app-reminder.sh', cliForwarder, 0o700, [
         '40f7f29c7392cd10283153275f23c725ef2174abc9d6039824fee464968dc23c',
         'a777c88c2394d30e625ad5e0068ba0c554bed936970652bf270732d76dbfb686',
         '4b602050fa3581b28f9e563873b946013d10f9b687488dcd1e569d18bfdd3fd3'
