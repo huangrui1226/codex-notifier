@@ -1,6 +1,6 @@
-# Codex Notifier
+# Codex 叮咚
 
-Codex Notifier 在 Codex CLI 完成回答、等你回复或需要你授权时发出提醒。平时由 Mac 提醒；连上已配对的 iPhone 后，实际提醒和测试提醒都只发到手机。手机断开或关闭「附近的 iPhone」后，Mac 自动恢复本机提醒。
+Codex 叮咚在 Codex CLI 完成回答、等你回复或需要你授权时发出提醒。平时由 Mac 提醒；连上已配对的 iPhone 后，实际提醒和测试提醒都只发到手机。手机断开或关闭「附近的 iPhone」后，Mac 自动恢复本机提醒。
 
 | 状态 | Mac 屏幕边缘光 | Mac 声音 | iPhone 通知 |
 | --- | --- | --- | --- |
@@ -17,11 +17,11 @@ npm ci
 npm run dev
 ```
 
-在「Codex 提醒」里分别设置桌面弹窗、声音和屏幕边缘光。点击「测试完成」和「测试待处理」即可预览两种提醒。关闭窗口后应用继续接收事件，按 **⌘Q** 退出会暂停 Mac 和 iPhone 提醒。退出期间的事件会被丢弃。
+在「Codex 叮咚」里分别设置桌面弹窗、声音和屏幕边缘光。点击「测试完成」和「测试待处理」即可预览两种提醒。关闭窗口后应用继续接收事件，按 **⌘Q** 退出会暂停 Mac 和 iPhone 提醒。退出期间的事件会被丢弃。
 
 ## 接入 Codex CLI
 
-**1. 打开 Mac 上的「Codex 提醒」。** 应用启动时会自动将缺少的转发脚本 `icon-app-reminder.sh` 和会话分类脚本 `classify-codex-turn.py` 安装到 `~/.codex/`。应用会更新可识别的旧版脚本，并保留你修改过的版本。
+**1. 打开 Mac 上的「Codex 叮咚」。** 应用启动时会自动将缺少的转发脚本 `icon-app-reminder.sh` 和会话分类脚本 `classify-codex-turn.py` 安装到 `~/.codex/`。应用会更新可识别的旧版脚本，并保留你修改过的版本。
 
 **2. 接收回答完成和等待回复事件。** 在 `~/.codex/config.toml` 顶层设置 `notify`，把示例路径换成转发脚本的实际绝对路径。如果已经配置了回调，可以在原回调中调用转发脚本，并将事件参数原样传入。
 
@@ -38,7 +38,7 @@ notify = ["/bin/sh", "/Users/你的用户名/.codex/icon-app-reminder.sh"]
 ## 配对附近的 iPhone
 
 1. 用 Xcode 打开 iPhone 工程，在 **Signing & Capabilities** 选择自己的开发团队。如果 Bundle ID 已被占用，换成自己的唯一标识。连接 iOS 16 或更高版本的 iPhone，按系统提示开启开发者模式，选择真机并运行。[iPhone 工程](iphone/NearbyReminders.xcodeproj)
-2. 两台设备都打开蓝牙。在 Mac 应用中开启「附近的 iPhone」，允许「Codex 提醒蓝牙助手」使用蓝牙，再点「生成配对码」。六位码在五分钟内有效。
+2. 两台设备都打开蓝牙。在 Mac 应用中开启「附近的 iPhone」，允许「Codex 叮咚蓝牙助手」使用蓝牙，再点「生成配对码」。六位码在五分钟内有效。
 3. 在 iPhone 上点「允许通知」和「查找 Mac」，填入六位码后点选对应的 Mac。如果系统显示蓝牙配对数字，在两端核对并确认。
 4. iPhone 显示「已连接，可以切换到其他 App。」后，将它切到后台，在 Mac 上各点一次测试按钮。若手机没有显示横幅，检查 iPhone 的通知权限、横幅设置和专注模式。
 

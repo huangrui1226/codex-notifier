@@ -15,6 +15,7 @@ import {
 import { dirname, join, resolve } from 'node:path'
 import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
+import { productName } from './package.json'
 
 function buildMacHelper(sourceName: string, name: string, frameworks: string[]): void {
   const source = join(__dirname, 'build', sourceName)
@@ -50,7 +51,7 @@ function prepareMacDevElectron(): string {
   const cache = join(
     __dirname,
     'node_modules/.cache/codex-reminder',
-    `ble-${version}-${process.arch}-${iconHash}`
+    `ble-${version}-${process.arch}-${iconHash}-${productName}`
   )
   const bundle = join(cache, 'Electron.app')
   const executable = join(bundle, 'Contents/MacOS/Electron')
@@ -86,7 +87,7 @@ function prepareMacDevElectron(): string {
         '-replace',
         key,
         '-string',
-        'Codex 提醒',
+        productName,
         join(stagedBundle, 'Contents/Info.plist')
       ])
     }

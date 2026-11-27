@@ -1,5 +1,4 @@
 appId: com.electron.app
-productName: Codex 提醒
 directories:
   buildResources: build
 files:

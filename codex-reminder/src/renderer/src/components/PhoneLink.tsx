@@ -50,7 +50,7 @@ export function PhoneLink({
       {phone?.enabled && (
         <div className="phone-pair">
           <p>
-            在 iPhone 的「Codex 提醒」中允许通知，点「查找 Mac」并输入配对码。连接期间请保持 Mac
+            在 iPhone 的「Codex 叮咚」中允许通知，点「查找 Mac」并输入配对码。连接期间请保持 Mac
             应用运行。
           </p>
           {phone.code && (

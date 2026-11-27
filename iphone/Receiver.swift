@@ -261,7 +261,7 @@ struct ReceiverView: View {
                         }
                     }
                 }
-            }.navigationTitle("Codex 提醒")
+            }.navigationTitle("Codex 叮咚")
         }
     }
 }

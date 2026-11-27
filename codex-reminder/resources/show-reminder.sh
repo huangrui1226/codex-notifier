@@ -12,7 +12,7 @@ case "$3" in
   *) exit 2 ;;
 esac
 if [ "$1" = '--test' ]; then
-  title='Codex 提醒'
+  title='Codex 叮咚'
   group='icon-app-reminder-test'
   case "$kind" in
     completed) message='测试提醒：回答已完成' ;;

@@ -1,6 +1,6 @@
 {
   "name": "codex-reminder",
-  "productName": "Codex 提醒",
+  "productName": "Codex 叮咚",
   "version": "1.0.0",
   "description": "Codex CLI 完成和待处理提醒",
   "main": "./out/main/index.js",

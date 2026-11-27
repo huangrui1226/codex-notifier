@@ -5,11 +5,11 @@
   <key>CFBundleIdentifier</key><string>local.iconapp.CodexBluetoothHelper</string>
   <key>CFBundleExecutable</key><string>icon-app-ble</string>
   <key>CFBundleName</key><string>Codex Bluetooth Helper</string>
-  <key>CFBundleDisplayName</key><string>Codex 提醒蓝牙助手</string>
+  <key>CFBundleDisplayName</key><string>Codex 叮咚蓝牙助手</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleVersion</key><string>1</string>
   <key>CFBundleShortVersionString</key><string>1.0</string>
   <key>LSUIElement</key><true/>
-  <key>NSBluetoothAlwaysUsageDescription</key><string>与附近的 iPhone 配对并发送 Codex 提醒。</string>
+  <key>NSBluetoothAlwaysUsageDescription</key><string>与附近的 iPhone 配对并发送 Codex CLI 提醒。</string>
 </dict>
 </plist>
